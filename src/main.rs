@@ -1,9 +1,10 @@
-use std::{env, fs::File};
+use std::env;
 
-use csv::{Reader, ReaderBuilder, Trim};
+use csv::{ReaderBuilder, Trim};
 use fallible_iterator::FallibleIterator;
 use transaction::Transaction;
 
+mod account;
 mod transaction;
 
 fn main() {
@@ -12,7 +13,8 @@ fn main() {
         eprintln!("Usage: {} <transaction_csv:path>", args[0]);
         return;
     }
-    // open the specified file into a reader
+    // open the specified file into a reader. ignore
+    // whitespaces as specified
     let mut reader = match ReaderBuilder::new().trim(Trim::All).from_path(&args[1]) {
         Ok(reader) => reader,
         Err(e) => {
