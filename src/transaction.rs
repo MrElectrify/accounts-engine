@@ -1,6 +1,7 @@
 use serde_derive::Deserialize;
 
 /// The type of a transaction. Types are aliased because
+/// we assume they will be with this capitalization
 #[derive(Debug, Deserialize)]
 pub enum Type {
     /// A credit to the client's account
