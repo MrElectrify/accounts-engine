@@ -1,6 +1,6 @@
 use serde_derive::Deserialize;
 
-/// The type of a transaction
+/// The type of a transaction. Types are aliased because
 #[derive(Debug, Deserialize)]
 pub enum Type {
     /// A credit to the client's account
@@ -26,7 +26,7 @@ pub struct Transaction {
     /// The type of the transaction
     pub r#type: Type,
     /// The client identifier that the transaction belongs to
-    pub client: u32,
+    pub client: u16,
     /// The transaction identifier, likely unique
     pub tx: u32,
     /// The amount involved in the transaction
