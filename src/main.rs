@@ -27,7 +27,7 @@ fn main() {
     };
     // prevent unnecessary mutability with a one-liner
     let transactions: Vec<Transaction> = match fallible_iterator::convert(reader.records())
-        .map(|res| res.deserialize::<Transaction>(None))
+        .map(|record| record.deserialize::<Transaction>(None))
         .collect()
     {
         Ok(transactions) => transactions,

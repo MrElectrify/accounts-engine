@@ -35,4 +35,41 @@ pub struct Transaction {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use std::io::Cursor;
+
+    use csv::{ReaderBuilder, Trim};
+    use fallible_iterator::FallibleIterator;
+
+    use super::Transaction;
+
+    #[test]
+    fn simple_deserialize() {
+        let buf = include_bytes!("../test/simple.csv");
+        // ignore whitespaces as specified
+        let mut reader = ReaderBuilder::new()
+            .trim(Trim::All)
+            .from_reader(Cursor::new(buf));
+        let transactions: Vec<Transaction> = fallible_iterator::convert(reader.records())
+            .map(|record| record.deserialize(None))
+            .collect()
+            .unwrap();
+        // make sure there are 5 transactions
+        assert_eq!(transactions.len(), 5);
+    }
+
+    #[test]
+    fn complex_deserialize() {
+        let buf = include_bytes!("../test/complex.csv");
+        // ignore whitespaces as specified
+        let mut reader = ReaderBuilder::new()
+            .trim(Trim::All)
+            .from_reader(Cursor::new(buf));
+        let transactions: Vec<Transaction> = fallible_iterator::convert(reader.records())
+            .map(|record| record.deserialize(None))
+            .collect()
+            .unwrap();
+        // make sure there are 5 transactions
+        assert_eq!(transactions.len(), 9);
+    }
+}
