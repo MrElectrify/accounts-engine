@@ -42,7 +42,7 @@ fn main() {
     let errs = engine.apply_transactions(&transactions);
     if !errs.is_empty() {
         eprintln!(
-            "The following {} errors occurred while applying transactions:",
+            "The following {} error(s) occurred while applying transactions:",
             errs.len()
         );
         for (entry, err) in errs {

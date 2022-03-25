@@ -36,7 +36,8 @@ impl Engine {
             .enumerate()
             .map(|(entry, t)| {
                 (
-                    entry,
+                    // add 1 because it references readable entries
+                    entry + 1,
                     {
                         // create the account if it does not exist
                         self.accounts
