@@ -29,7 +29,6 @@ impl Engine {
         // bit fancy and could also be done more simply, but this is how
         // I like to make use of functional programming
         transactions
-            .into_iter()
             .enumerate()
             .map(|(entry, maybe_transaction)| {
                 (
