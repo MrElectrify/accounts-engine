@@ -4,7 +4,10 @@ use csv::{ReaderBuilder, Trim};
 use fallible_iterator::FallibleIterator;
 use transaction::Transaction;
 
+use crate::engine::Engine;
+
 mod account;
+mod engine;
 mod transaction;
 
 fn main() {
@@ -33,5 +36,8 @@ fn main() {
             return;
         }
     };
+    // create the engine
+    let engine = Engine::new();
+    // apply the transactions
     println!("{:?}", transactions);
 }

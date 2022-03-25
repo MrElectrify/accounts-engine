@@ -31,7 +31,7 @@ pub struct Transaction {
     /// The transaction identifier, likely unique
     pub tx: u32,
     /// The amount involved in the transaction
-    pub amount: f64,
+    pub amount: Option<f64>,
 }
 
 #[cfg(test)]
