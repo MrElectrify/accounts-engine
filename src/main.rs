@@ -48,6 +48,7 @@ fn main() {
         for (entry, err) in errs {
             eprintln!("Entry {}: {}", entry, err);
         }
+        eprintln!("---");
     }
     // generate the output CSV
     let mut writer = Writer::from_writer(io::stdout());
