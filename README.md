@@ -15,3 +15,4 @@ A few assumptions were made.
 - Nothing can be done with a transaction after a dispute is resolved with either a direct resolution or chargeback
 - "Chargeback" refers to a user charging back a deposit to an account from a third-party processor, not a purchase made from funds on the platform
 - Errors in deserialization are not fatal
+- Errors in processing including insufficient funds that are not provider faults should be presented
