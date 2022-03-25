@@ -30,7 +30,7 @@ impl Account {
     /// # Arguments
     ///
     /// `transaction`: The transaction to apply
-    pub fn apply_transaction(transaction: Transaction) -> Result<(), Error> {
+    pub fn apply_transaction(&mut self, transaction: &Transaction) -> Result<(), Error> {
         Ok(())
     }
     /// Creates a new account for a client

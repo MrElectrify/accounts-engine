@@ -37,7 +37,7 @@ fn main() {
         }
     };
     // create the engine
-    let engine = Engine::new();
+    let mut engine = Engine::new();
     // apply the transactions
-    println!("{:?}", transactions);
+    engine.apply_transactions(&transactions);
 }

@@ -18,12 +18,32 @@ impl Engine {
     ///
     /// # Arguments
     ///
-    /// `iter`: An iterator of transactions
-    pub fn apply_transactions<I>(iter: I) -> Vec<(u64, Error)>
+    /// `transactions`: Some container of transactions
+    pub fn apply_transactions<T>(&mut self, transactions: &T) -> Vec<(usize, Error)>
     where
-        I: Iterator<Item = Transaction>,
+        for<'a> &'a T: IntoIterator<Item = &'a Transaction>,
     {
-        Vec::new()
+        // apply transactions to all accounts and filters out successful
+        // ones, because here we are interested in the errors. this is a
+        // bit fancy and could also be done more simply, but this is how
+        // I like to make use of functional programming
+        transactions
+            .into_iter()
+            .enumerate()
+            .map(|(entry, t)| {
+                (
+                    entry,
+                    {
+                        // create the account if it does not exist
+                        self.accounts
+                            .entry(t.client)
+                            .or_insert(Account::new(t.client))
+                    }
+                    .apply_transaction(t),
+                )
+            })
+            .filter_map(|(entry, res)| res.err().map(|e| (entry, e)))
+            .collect()
     }
 
     /// Creates a new accounts engine
