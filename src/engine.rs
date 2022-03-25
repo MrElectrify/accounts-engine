@@ -12,16 +12,17 @@ pub struct Engine {
 }
 
 impl Engine {
-    /// Applies a group of transactions to their associated accounts.
-    /// Returns the errors that occurred and the entry in which they
-    /// occurred
+    /// Applies a group of streamed transactions to their associated accounts.
+    /// This could easily be made async with actual stream futures to support
+    /// real socket streaming. Returns the errors that occurred and the entry
+    /// in which they occurred.
     ///
     /// # Arguments
     ///
     /// `transactions`: Some container of transactions
-    pub fn apply_transactions<T>(&mut self, transactions: &T) -> Vec<(usize, Error)>
+    pub fn apply_transactions<T>(&mut self, transactions: T) -> Vec<(usize, Error)>
     where
-        for<'a> &'a T: IntoIterator<Item = &'a Transaction>,
+        T: Iterator<Item = Result<Transaction, csv::Error>>,
     {
         // apply transactions to all accounts and filters out successful
         // ones, because here we are interested in the errors. this is a
@@ -30,17 +31,20 @@ impl Engine {
         transactions
             .into_iter()
             .enumerate()
-            .map(|(entry, t)| {
+            .map(|(entry, maybe_transaction)| {
                 (
                     // add 1 because it references readable entries
                     entry + 1,
-                    {
-                        // create the account if it does not exist
-                        self.accounts
-                            .entry(t.client)
-                            .or_insert_with(|| Account::new(t.client))
-                    }
-                    .apply_transaction(t),
+                    match maybe_transaction {
+                        Ok(transaction) => {
+                            // create the account if it does not exist
+                            self.accounts
+                                .entry(transaction.client)
+                                .or_insert_with(|| Account::new(transaction.client))
+                                .apply_transaction(transaction)
+                        }
+                        Err(e) => Err(e.into()),
+                    },
                 )
             })
             .filter_map(|(entry, res)| res.err().map(|e| (entry, e)))

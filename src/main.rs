@@ -1,8 +1,6 @@
 use std::{env, io};
 
 use csv::{ReaderBuilder, Trim, Writer};
-use fallible_iterator::FallibleIterator;
-use transaction::Transaction;
 
 use crate::engine::Engine;
 
@@ -17,7 +15,7 @@ fn main() {
         return;
     }
     // open the specified file into a reader. ignore
-    // whitespaces as specified
+    // whitespaces as specified. file is not read yet
     let mut reader = match ReaderBuilder::new().trim(Trim::All).from_path(&args[1]) {
         Ok(reader) => reader,
         Err(e) => {
@@ -25,21 +23,10 @@ fn main() {
             return;
         }
     };
-    // prevent unnecessary mutability with a one-liner
-    let transactions: Vec<Transaction> = match fallible_iterator::convert(reader.records())
-        .map(|record| record.deserialize::<Transaction>(None))
-        .collect()
-    {
-        Ok(transactions) => transactions,
-        Err(e) => {
-            eprintln!("Failed to deserialize transactions: {}", e);
-            return;
-        }
-    };
     // create the engine
     let mut engine = Engine::new();
     // apply the transactions
-    let errs = engine.apply_transactions(&transactions);
+    let errs = engine.apply_transactions(reader.deserialize());
     if !errs.is_empty() {
         eprintln!(
             "The following {} error(s) occurred while applying transactions:",

@@ -26,7 +26,7 @@ pub struct Account {
 
 /// Any error that arises during transaction processing.
 /// No comments because errors are descriptive
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum Error {
     #[error("The transaction could not be applied because the account was locked")]
     AccountLocked,
@@ -39,6 +39,8 @@ pub enum Error {
         "The transaction could not be processed because it was missing an amount where expected"
     )]
     MissingAmount,
+    #[error("The transaction could not be parsed or deserialized: {0}")]
+    Parse(#[from] csv::Error),
 }
 
 impl Account {
@@ -63,7 +65,7 @@ impl Account {
     /// # Arguments
     ///
     /// `transaction`: The transaction to apply
-    pub fn apply_transaction(&mut self, transaction: &Transaction) -> Result<(), Error> {
+    pub fn apply_transaction(&mut self, transaction: Transaction) -> Result<(), Error> {
         // if the user's account is frozen, don't allow any
         // transaction to apply
         if self.locked {
@@ -109,14 +111,13 @@ impl Account {
     /// # Arguments
     ///
     /// `transaction`: The transaction associated with the deposit
-    fn deposit(&mut self, transaction: &Transaction) -> Result<(), Error> {
+    fn deposit(&mut self, transaction: Transaction) -> Result<(), Error> {
         // make sure there is an associated amount
         let amount = transaction.amount.ok_or(Error::MissingAmount)?;
         self.available += amount;
         self.total += amount;
         // track the transaction in case of dispute
-        self.transactions
-            .insert(transaction.tx, transaction.clone());
+        self.transactions.insert(transaction.tx, transaction);
         Ok(())
     }
 
@@ -166,7 +167,7 @@ impl Account {
     /// # Arguments
     ///
     /// `transaction`: The transaction associated with the withdrawal
-    fn withdrawal(&mut self, transaction: &Transaction) -> Result<(), Error> {
+    fn withdrawal(&mut self, transaction: Transaction) -> Result<(), Error> {
         // make sure they have an amount associated
         let requested = transaction.amount.ok_or(Error::MissingAmount)?;
         if requested > self.available {
@@ -175,8 +176,7 @@ impl Account {
             self.available -= requested;
             self.total -= requested;
             // track the transaction in case of dispute
-            self.transactions
-                .insert(transaction.tx, transaction.clone());
+            self.transactions.insert(transaction.tx, transaction);
             Ok(())
         }
     }
@@ -184,10 +184,7 @@ impl Account {
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        account::Error,
-        transaction::{Transaction, Type},
-    };
+    use crate::transaction::{Transaction, Type};
 
     use super::Account;
 
@@ -195,7 +192,7 @@ mod test {
     #[test]
     fn deposit() {
         let mut acc = Account::new(1);
-        acc.deposit(&Transaction {
+        acc.deposit(Transaction {
             r#type: Type::Deposit,
             client: 1,
             tx: 1,
@@ -211,16 +208,14 @@ mod test {
     #[test]
     fn withdrawal_insufficient_funds() {
         let mut acc = Account::new(1);
-        assert_eq!(
-            acc.withdrawal(&Transaction {
+        assert!(acc
+            .withdrawal(Transaction {
                 r#type: Type::Withdrawal,
                 client: 1,
                 tx: 1,
                 amount: Some(123.45),
             })
-            .unwrap_err(),
-            Error::InsufficientFunds(123.45, 0.0)
-        );
+            .is_err());
         // make sure we didn't track this transaction
         // that did not do anything
         assert!(acc.transactions.is_empty());
@@ -231,14 +226,14 @@ mod test {
     fn withdrawal_sanity() {
         let amount = 20.924;
         let mut acc = Account::new(1);
-        acc.deposit(&Transaction {
+        acc.deposit(Transaction {
             r#type: Type::Deposit,
             client: 1,
             tx: 1,
             amount: Some(amount),
         })
         .unwrap();
-        acc.withdrawal(&Transaction {
+        acc.withdrawal(Transaction {
             r#type: Type::Withdrawal,
             client: 1,
             tx: 2,
@@ -255,7 +250,7 @@ mod test {
     fn dispute_chargeback() {
         let amount = 20.924;
         let mut acc = Account::new(1);
-        acc.deposit(&Transaction {
+        acc.deposit(Transaction {
             r#type: Type::Deposit,
             client: 1,
             tx: 1,
@@ -277,14 +272,14 @@ mod test {
     fn dispute_resolve() {
         let amount = 20.924;
         let mut acc = Account::new(1);
-        acc.deposit(&Transaction {
+        acc.deposit(Transaction {
             r#type: Type::Deposit,
             client: 1,
             tx: 1,
             amount: Some(amount),
         })
         .unwrap();
-        acc.withdrawal(&Transaction {
+        acc.withdrawal(Transaction {
             r#type: Type::Withdrawal,
             client: 1,
             tx: 2,
@@ -305,25 +300,21 @@ mod test {
     fn locked_account() {
         let mut acc = Account::new(1);
         acc.locked = true;
-        assert_eq!(
-            acc.apply_transaction(&Transaction {
+        assert!(acc
+            .apply_transaction(Transaction {
                 r#type: Type::Deposit,
                 client: 1,
                 tx: 1,
                 amount: Some(1.0),
             })
-            .unwrap_err(),
-            Error::AccountLocked
-        );
-        assert_eq!(
-            acc.apply_transaction(&Transaction {
+            .is_err(),);
+        assert!(acc
+            .apply_transaction(Transaction {
                 r#type: Type::Deposit,
                 client: 1,
                 tx: 2,
                 amount: Some(1.0),
             })
-            .unwrap_err(),
-            Error::AccountLocked
-        );
+            .is_err());
     }
 }
