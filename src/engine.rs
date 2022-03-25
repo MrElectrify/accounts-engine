@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::{
     account::{Account, Error},
@@ -7,8 +7,12 @@ use crate::{
 
 /// A toy payments engine
 pub struct Engine {
-    /// The accounts available for processing
-    accounts: HashMap<u16, Account>,
+    /// The accounts available for processing. We use
+    /// a BTree here because we likely want to print in
+    /// ascending order, and this avoids the sort later.
+    /// With a maximum of ~16 comparisons anyways, it won't
+    /// be much slower than a hashmap
+    pub accounts: BTreeMap<u16, Account>,
 }
 
 impl Engine {
@@ -37,7 +41,7 @@ impl Engine {
                         // create the account if it does not exist
                         self.accounts
                             .entry(t.client)
-                            .or_insert(Account::new(t.client))
+                            .or_insert_with(|| Account::new(t.client))
                     }
                     .apply_transaction(t),
                 )
@@ -49,7 +53,7 @@ impl Engine {
     /// Creates a new accounts engine
     pub fn new() -> Self {
         Self {
-            accounts: HashMap::new(),
+            accounts: BTreeMap::new(),
         }
     }
 }

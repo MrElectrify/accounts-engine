@@ -2,7 +2,7 @@ use serde_derive::Deserialize;
 
 /// The type of a transaction. Types are aliased because
 /// we assume they will be with this capitalization
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 pub enum Type {
     /// A credit to the client's account
     #[serde(alias = "deposit")]
@@ -22,7 +22,7 @@ pub enum Type {
 }
 
 /// An actual transaction
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Transaction {
     /// The type of the transaction
     pub r#type: Type,
